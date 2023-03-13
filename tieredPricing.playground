@@ -1,0 +1,52 @@
+import UIKit
+
+/// 阶梯下限
+enum TieredLowerLimit: CGFloat, CaseIterable {
+    
+    /// 每增加1口人，下限提升的立方米数
+    static let additionalCountPerPerson: CGFloat = 70
+    
+    case zero = 0
+    case threeHundredAndTwenty = 320
+    case fourHundred = 400
+
+    var pricePerCubicMeter: CGFloat { // 每立方米价格
+        switch self {
+        case .zero:
+            return 3.45
+        case .threeHundredAndTwenty:
+            return 4.14
+        case .fourHundred:
+            return 5.18
+        }
+    }
+
+    /// 人数对应的阶梯下限的立方米数
+    func count(ofPeopleNumber peopleNumber: Int) -> CGFloat {
+
+        let additionalCount = self != .zero && peopleNumber > 4 ? CGFloat(peopleNumber - 4) * TieredLowerLimit.additionalCountPerPerson : 0
+        return rawValue + additionalCount
+    }
+}
+
+func computeAmount(byPeopleNumber peopleNumber: Int, used: CGFloat) -> CGFloat {
+
+    let lowerLimitListSorted = TieredLowerLimit.allCases.sorted(by: {$0.count(ofPeopleNumber: peopleNumber) > $1.count(ofPeopleNumber: peopleNumber)})
+    let result: (surplus: CGFloat, amount: CGFloat) = lowerLimitListSorted.reduce((used, 0.0), { (result, next) in
+
+        let nextCount = next.count(ofPeopleNumber: peopleNumber)
+        if result.0 > nextCount {
+
+            let surplus = nextCount
+            let currentLevelAmount = (result.0 - nextCount) * next.pricePerCubicMeter
+            return (surplus, currentLevelAmount + result.1)
+        } else {
+
+            return result
+        }
+    })
+    return result.1
+}
+
+let result = computeAmount(byPeopleNumber: 4, used: 660)
+print(result)
